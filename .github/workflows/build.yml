@@ -13,11 +13,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Unzip Project
+      - name: Unzip and Fix Project
         run: |
           unzip -o "*.zip"
           if [ ! -f "build.gradle.kts" ]; then
             mv */* . 2>/dev/null || true
+          fi
+          sed -i 's/security-crypto:[0-9.]*/security-crypto:1.1.0-alpha06/g' app/build.gradle.kts
+          if ! grep -q "1.1.0-alpha06" app/build.gradle.kts; then
+            echo 'dependencies { implementation("androidx.security:security-crypto:1.1.0-alpha06") }' >> app/build.gradle.kts
           fi
 
       - name: Set up JDK 17
@@ -32,10 +36,11 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --stacktrace
+        run: gradle assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Jarvis-Debug-APK
           path: "**/build/outputs/apk/debug/*.apk"
+
